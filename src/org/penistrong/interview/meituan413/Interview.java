@@ -33,7 +33,7 @@ public class Interview {
         TreeNode root = new TreeNode(nums[mid]);
         if (mid - 1 >= left)
             root.left = buildTree(nums, left, mid - 1);
-        if (mid - 1 <= right)
+        if (mid + 1 <= right)
             root.right = buildTree(nums, mid + 1, right);
         return root;
     }
