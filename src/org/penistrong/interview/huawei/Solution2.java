@@ -3,7 +3,6 @@ package org.penistrong.interview.huawei;
 import java.util.*;
 
 public class Solution2 {
-
     static boolean[] visited;
     static int[] node_max_food;
     public static void main(String[] args) {
