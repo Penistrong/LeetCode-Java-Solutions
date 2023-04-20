@@ -2,6 +2,9 @@ package org.penistrong.template.queue;
 
 /**
  * 手写阻塞队列-基于Synchronized与wait()、notify()实现
+ * 注意，方法中主动调用wait()而导致的"阻塞"
+ * 是指加入到锁对象指向的monitor对象的_WaitSet中，让线程进入无限期等待Waiting状态排队，等待被notify()唤醒
+ * 获取不到锁对象的线程会加入到monitor对象的_EntrySet中，让线程进入阻塞Blocked状态排队，一旦monitor对象被释放就可唤醒线程获得锁
  */
 public class SynchronizedBlockingQueue<E> implements BlockingQueue<E>{
 
