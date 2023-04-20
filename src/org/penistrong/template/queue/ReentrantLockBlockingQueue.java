@@ -42,7 +42,7 @@ public class ReentrantLockBlockingQueue<E> implements BlockingQueue<E>{
 
         // 采用公平可重入锁(排队获取)
         lock = new ReentrantLock(true);
-        // 初始所锁持有的对象
+        // 初始化锁持有的对象
         notEmpty = lock.newCondition();
         notFull = lock.newCondition();
 
@@ -64,27 +64,27 @@ public class ReentrantLockBlockingQueue<E> implements BlockingQueue<E>{
         // 获取锁
         lock.lock();
         try {
-            // 队列已满时锁住notFull(阻塞写线程)
+            // 队列已满时阻塞当前写线程，释放notFull条件对象
             while (count == capacity) { // 队列塞满时，notFull对象一直等待
                 System.out.println(Thread.currentThread().getName()
                         + "[" + Thread.currentThread().getId() + "]"
                         + "队列已满，等待消费者消费["
                         + "capacity: " + capacity + ", "
                         + "count: " + count + "]");
-                notFull.await();         // 阻塞写线程
+                notFull.await();
             }
 
-            // 队列未满时即可放入
+            // 队列未满时当前即可放入元素
             // 当前要入队的元素放在下标为count的位置
             items[offerIndex++] = e;
             if (offerIndex == capacity) {    // 下一个入队元素的索引等于容器大小，说明容器已满
                 offerIndex = 0;              // 下一次出队的只能是队头元素，则索引置为0
             }
             count++;
-            notEmpty.signal();  // 唤醒读线程
+            notEmpty.signal();  // 唤醒一个因队列为空而阻塞的读线程，通知它可以取出元素了
             return true;
         } catch (InterruptedException ec) {
-            notEmpty.signal();  // 锁不住了唤醒读线程
+            notEmpty.signal();  // 被中断时也唤醒其他读线程
         } finally {
             lock.unlock();      // 释放锁
         }
@@ -102,14 +102,14 @@ public class ReentrantLockBlockingQueue<E> implements BlockingQueue<E>{
     public E take() {
         lock.lock();
         try {
-            // 队列为空时锁住notFull(阻塞读线程)
+            // 队列为空时阻塞当前读线程，释放notEmpty条件对象
             while (count == 0) {
                 System.out.println(Thread.currentThread().getName()
                         + "[" + Thread.currentThread().getId() + "]"
                         + ": 队列为空，等待生产者生产["
                         + "capacity: " + capacity + ", "
                         + "count: " + count + "]");
-                notEmpty.await();    //  阻塞读线程
+                notEmpty.await();
             }
 
             // 一旦不空则可出队
@@ -119,7 +119,7 @@ public class ReentrantLockBlockingQueue<E> implements BlockingQueue<E>{
                 takeIndex = 0;
             }
             count--;
-            notFull.signal();   // 唤醒写线程
+            notFull.signal();   // 唤醒一个因队列已满而阻塞的写线程，通知它可以将其待入队元素入队了
             return (E) obj;
 
         } catch (InterruptedException ec) {

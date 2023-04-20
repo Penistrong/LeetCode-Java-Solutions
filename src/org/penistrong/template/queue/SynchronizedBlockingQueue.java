@@ -59,23 +59,23 @@ public class SynchronizedBlockingQueue<E> implements BlockingQueue<E>{
         if (e == null) {
             throw new NullPointerException();
         }
-        // 队列已满时锁住notFull
+        // 锁住notFull判断队列是否已满
         synchronized (notFull) {
             try {
-                while (count == capacity) { // 队列塞满时，notFull对象一直等待
+                while (count == capacity) { // 队列塞满时，不能继续入队，阻塞当前调用offer()的写线程
                     System.out.println(Thread.currentThread().getName()
                             + "[" + Thread.currentThread().getId() + "]"
                             + "队列已满，等待消费者消费["
                             + "capacity: " + capacity + ", "
                             + "count: " + count + "]");
-                    notFull.wait();         // 阻塞写线程
+                    notFull.wait();         // 阻塞当前写线程，释放该锁对象notFull，让出CPU
                 }
             }catch (InterruptedException ec) {
                 ec.printStackTrace();
             }
         }
 
-        // 队列未满时锁住notEmpty
+        // 锁住notEmpty然后将新元素入队
         synchronized (notEmpty) {
             // 当前要入队的元素放在下标为count的位置
             items[offerIndex++] = e;
@@ -83,7 +83,7 @@ public class SynchronizedBlockingQueue<E> implements BlockingQueue<E>{
                 offerIndex = 0;              // 下一次出队的只能是队头元素，则索引置为0
             }
             count++;
-            notEmpty.notify();  // 唤醒读线程
+            notEmpty.notify();  // 唤醒一个可能阻塞住的读线程，通知它队列有元素了，可以醒过来取走元素了
             return true;
         }
     }
@@ -95,22 +95,22 @@ public class SynchronizedBlockingQueue<E> implements BlockingQueue<E>{
     @Override
     @SuppressWarnings(value = "unchecked")
     public E take() {
-        // 队列为空时锁住notEmpty
+        // 锁住notEmpty判断队列是否为空
         synchronized (notEmpty) {
             try {
-                while (count == 0) {
+                while (count == 0) {    // 队列为空时，不能取出任何元素，阻塞当前调用take()的读线程
                     System.out.println(Thread.currentThread().getName()
                             + "[" + Thread.currentThread().getId() + "]"
                             + ": 队列为空，等待生产者生产["
                             + "capacity: " + capacity + ", "
                             + "count: " + count + "]");
-                    notEmpty.wait();    //  阻塞读线程
+                    notEmpty.wait();    //  阻塞当前读线程，释放该锁对象notEmpty，让出CPU
                 }
             } catch (InterruptedException ec) {
                 ec.printStackTrace();
             }
         }
-        // 队列不空
+        // 锁住notFull然后从队列里取出元素
         synchronized (notFull) {
             Object obj = items[takeIndex++];
             // 循环到头部
@@ -118,7 +118,7 @@ public class SynchronizedBlockingQueue<E> implements BlockingQueue<E>{
                 takeIndex = 0;
             }
             count--;
-            notFull.notify();   // 唤醒写线程
+            notFull.notify();   // 唤醒一个可能阻塞住的写线程，通知它队列现在不满了，可以醒过来将其待入队元素入队了
             return (E) obj;
         }
     }
