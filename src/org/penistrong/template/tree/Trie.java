@@ -1,4 +1,4 @@
-package org.penistrong.leetcode.tree;
+package org.penistrong.template.tree;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -49,7 +49,7 @@ public class Trie {
             if (tmp == null) break;
             tmp = tmp.childNodes.get(word.charAt(i));
         }
-        return tmp == null ? false : tmp.isLeaf;
+        return tmp != null && tmp.isLeaf;
     }
 
     // 判断字典树是否有给定前缀
